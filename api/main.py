@@ -8,7 +8,7 @@ from fastapi.middleware.cors import CORSMiddleware
 from fastapi.staticfiles import StaticFiles
 import os
 
-from api.routers import analyze, clean
+from api.routers import analyze, clean, discovery
 
 # Create FastAPI app
 app = FastAPI(
@@ -37,6 +37,7 @@ app.mount("/reports", StaticFiles(directory=reports_dir), name="reports")
 # Include routers
 app.include_router(analyze.router, prefix="/api", tags=["AI Governance"])
 app.include_router(clean.router, prefix="/api", tags=["Data Cleaning"])
+app.include_router(discovery.router, prefix="/api", tags=["Discover sources"])
 
 @app.get("/")
 async def root():

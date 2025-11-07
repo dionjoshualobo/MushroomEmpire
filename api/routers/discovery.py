@@ -1,19 +1,13 @@
+from spacy.matcher import PhraseMatcher, Matcher
+from fastapi import APIRouter, File, UploadFile
+from fastapi.responses import FileResponse
+from pathlib import Path
+from collections import defaultdict
 import csv, tempfile
 import re
-from pathlib import Path
-from collections import Counter
-from datetime import datetime
-from fastapi import FastAPI, File, UploadFile
-from fastapi.responses import FileResponse
-import uvicorn
-import pprint
-
-app = FastAPI()
-
 import spacy
-from spacy.matcher import PhraseMatcher, Matcher
-from collections import defaultdict
-import re
+
+router = APIRouter()
 
 try:
     nlp = spacy.load("en_core_web_trf")
@@ -179,7 +173,7 @@ fieldnames = [
 
 
 # this route will accept every txt/log file that is not csv
-@app.post("/api/files")
+@router.post("/files")
 async def postFile(file: UploadFile):
     if file.filename.endswith("csv"):
         return {"error" : "Cannot accept csv files"}
@@ -226,11 +220,7 @@ async def postFile(file: UploadFile):
 
         
         writer.writerow(row)
-        print(pprint.pprint(row))
 
         return FileResponse(
             temp_path, media_type="text/csv", filename="dataset.csv"
         )
-
-if __name__ == '__main__':
-   uvicorn.run(app) 
