@@ -10,7 +10,7 @@ import os
 # Add parent directory to path
 sys.path.insert(0, os.path.dirname(os.path.abspath(__file__)))
 
-from cleaning import DataCleaner, CleaningConfig
+from data_cleaning import DataCleaner
 
 
 def test_basic_cleaning():

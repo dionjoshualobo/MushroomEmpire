@@ -21,6 +21,7 @@ class DataProcessor:
         self.categorical_features = []
         self.feature_names = []
         self.encoders = {}
+        self.target_encoder = None  # Add target encoder
         self.scaler = StandardScaler()
         
         self.X_train = None
@@ -74,6 +75,13 @@ class DataProcessor:
         feature_cols = [col for col in self.df.columns if col != self.target_column]
         X = self.df[feature_cols].copy()
         y = self.df[self.target_column].copy()
+        
+        # Encode target variable if it's categorical
+        if y.dtype == 'object' or y.dtype.name == 'category':
+            self.target_encoder = LabelEncoder()
+            y_encoded = self.target_encoder.fit_transform(y)
+            y = pd.Series(y_encoded, index=y.index)
+            print(f"Target '{self.target_column}' encoded: {dict(enumerate(self.target_encoder.classes_))}")
         
         # Encode categorical variables
         for col in self.categorical_features:

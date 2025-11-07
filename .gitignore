@@ -11,7 +11,7 @@ dist/
 downloads/
 eggs/
 .eggs/
-lib/
+
 lib64/
 parts/
 sdist/
@@ -48,9 +48,11 @@ Thumbs.db
 # Streamlit
 .streamlit/secrets.toml
 
-# Reports
+# Reports and generated files
 reports/*.json
 reports/*.pdf
+reports/*.csv
+reports/*.html
 
 # Logs
 *.log
@@ -58,5 +60,18 @@ reports/*.pdf
 # Data (keep demo dataset)
 *.csv
 !Datasets/loan_data.csv
+
+# Node.js & Next.js
+node_modules/
+.next/
+out/
+.vercel
+*.tsbuildinfo
+next-env.d.ts
+
+# Frontend build artifacts
+frontend/nordic-privacy-ai/.next/
+frontend/nordic-privacy-ai/out/
+frontend/nordic-privacy-ai/node_modules/
 
 Data
