@@ -1,6 +1,6 @@
 """
 Test script for data cleaning module
-Demonstrates PII detection and anonymization on loan dataset
+Tests general PII + Nordic-specific PII detection with automatic report generation
 """
 
 import pandas as pd
@@ -72,9 +72,9 @@ def test_with_risky_features():
 
 
 def test_with_synthetic_pii():
-    """Test with synthetic PII data"""
+    """Test with synthetic general PII data"""
     print("\n" + "="*70)
-    print("TEST 3: Synthetic PII Detection")
+    print("TEST 3: General PII Detection (US/International)")
     print("="*70)
     
     # Create test DataFrame with obvious PII
@@ -111,7 +111,7 @@ def test_with_synthetic_pii():
         'amount': [1000, 2000, 1500, 3000, 2500]
     })
     
-    print(f"\n✓ Created synthetic dataset with PII:")
+    print(f"\n✓ Created synthetic dataset with general PII:")
     print(test_data.head())
     
     # Initialize cleaner
@@ -132,8 +132,80 @@ def test_with_synthetic_pii():
     
     # Save outputs
     os.makedirs('output', exist_ok=True)
-    cleaner.save_cleaned_data(cleaned_df, 'output/synthetic_cleaned.csv')
-    cleaner.save_audit_report(audit_report, 'output/synthetic_audit.json')
+    cleaner.save_cleaned_data(cleaned_df, 'output/general_pii_cleaned.csv')
+    cleaner.save_audit_report(audit_report, 'output/general_pii_audit.json')
+    
+    # Generate reports
+    print("\n📊 Generating explainability reports...")
+    cleaner.save_simple_report(audit_report, 'output/general_pii_simple_report.json', 'General PII Test Dataset')
+    cleaner.save_detailed_report(audit_report, 'output/general_pii_detailed_report.json', 'General PII Test Dataset')
+    
+    return cleaned_df, audit_report
+
+
+def test_nordic_pii():
+    """Test with Nordic-specific PII data (Finnish, Swedish, Norwegian, Danish)"""
+    print("\n" + "="*70)
+    print("TEST 4: Nordic PII Detection (FI, SE, NO, DK)")
+    print("="*70)
+    
+    # Create Nordic healthcare test dataset
+    nordic_data = pd.DataFrame({
+        'patient_id': [1001, 1002, 1003, 1004, 1005],
+        'name': ['Matti Virtanen', 'Anna Andersson', 'Lars Nilsen', 'Sofie Jensen', 'Björn Eriksson'],
+        'henkilotunnus': ['010190-123A', '150685-456B', '310795+789C', '220503A234D', '111280-567E'],  # Finnish
+        'personnummer': [None, '850615-4567', None, None, '801211-8901'],  # Swedish
+        'fodselsnummer': [None, None, '010190 12345', None, None],  # Norwegian
+        'cpr_nummer': [None, None, None, '010190-1234', None],  # Danish
+        'email': ['matti.v@example.fi', 'anna.a@healthcare.se', 'lars.n@clinic.no', 'sofie.j@hospital.dk', 'bjorn.e@care.se'],
+        'phone': ['+358 50 123 4567', '+46 70 234 5678', '+47 91 345 6789', '+45 20 456 7890', '+46 73 567 8901'],
+        'diagnosis_code': ['J06.9', 'I10', 'E11.9', 'M54.5', 'F41.1'],
+        'age': [35, 39, 29, 22, 45],
+        'gender': ['M', 'F', 'M', 'F', 'M'],
+        'treatment_outcome': ['Recovered', 'Ongoing', 'Recovered', 'Ongoing', 'Recovered']
+    })
+    
+    print(f"\n✓ Created Nordic healthcare dataset:")
+    print(f"  - Finnish Henkilötunnus (HETU)")
+    print(f"  - Swedish Personnummer")
+    print(f"  - Norwegian Fødselsnummer")
+    print(f"  - Danish CPR-nummer")
+    print(f"  - Nordic phone numbers (+358, +46, +47, +45)")
+    print(f"  - Nordic email domains (.fi, .se, .no, .dk)")
+    print()
+    print(nordic_data.to_string())
+    
+    # Initialize cleaner (Nordic recognizers loaded automatically)
+    cleaner = DataCleaner(nordic_data)
+    
+    # Run cleaning
+    cleaned_df, audit_report = cleaner.clean(
+        risky_features=None,
+        interactive=False,
+        scan_all_cells=True
+    )
+    
+    print("\n🔒 Cleaned dataset (Nordic IDs anonymized):")
+    print(cleaned_df.to_string())
+    
+    # Display results
+    cleaner.print_audit_summary(audit_report)
+    
+    # Save outputs
+    os.makedirs('output', exist_ok=True)
+    cleaner.save_cleaned_data(cleaned_df, 'output/nordic_pii_cleaned.csv')
+    cleaner.save_audit_report(audit_report, 'output/nordic_pii_audit.json')
+    
+    # Generate reports
+    print("\n📊 Generating explainability reports...")
+    cleaner.save_simple_report(audit_report, 'output/nordic_pii_simple_report.json', 'Nordic Healthcare Dataset')
+    cleaner.save_detailed_report(audit_report, 'output/nordic_pii_detailed_report.json', 'Nordic Healthcare Dataset')
+    
+    print("\n✅ Nordic-specific entities detected:")
+    print("  ✓ FI_PERSONAL_ID (Finnish Henkilötunnus)")
+    print("  ✓ SE_PERSONAL_ID (Swedish Personnummer)")
+    print("  ✓ NO_PERSONAL_ID (Norwegian Fødselsnummer)")
+    print("  ✓ DK_PERSONAL_ID (Danish CPR-nummer)")
     
     return cleaned_df, audit_report
 
@@ -141,7 +213,7 @@ def test_with_synthetic_pii():
 def test_interactive_mode():
     """Test interactive mode (requires user input)"""
     print("\n" + "="*70)
-    print("TEST 4: Interactive Mode (Manual Decisions)")
+    print("TEST 5: Interactive Mode (Manual Decisions)")
     print("="*70)
     
     # Create ambiguous test data
@@ -182,7 +254,7 @@ def test_interactive_mode():
 def demonstrate_integration_with_analysis():
     """Demonstrate how cleaning integrates with AI governance pipeline"""
     print("\n" + "="*70)
-    print("INTEGRATION DEMO: Cleaning → Analysis Workflow")
+    print("TEST 6: Integration Demo (Cleaning → Analysis Workflow)")
     print("="*70)
     
     # Load data
@@ -231,17 +303,20 @@ def main():
     """Run all tests"""
     print("\n" + "="*70)
     print("🧪 DATA CLEANING MODULE - TEST SUITE")
+    print("   General PII + Nordic-Specific PII Detection")
     print("="*70)
     
     print("\nAvailable tests:")
     print("  1. Basic PII detection on loan dataset")
     print("  2. Cleaning with pre-flagged risky features")
-    print("  3. Synthetic PII detection (comprehensive)")
-    print("  4. Interactive mode (requires user input)")
-    print("  5. Integration workflow demonstration")
-    print("  6. Run all non-interactive tests")
+    print("  3. General PII detection (US/International) + Reports")
+    print("  4. Nordic PII detection (FI, SE, NO, DK) + Reports")
+    print("  5. Interactive mode (requires user input)")
+    print("  6. Integration workflow demonstration")
+    print("  7. Run all non-interactive tests")
+    print("  8. Run Nordic + General PII tests only")
     
-    choice = input("\nSelect test (1-6): ").strip()
+    choice = input("\nSelect test (1-8): ").strip()
     
     if choice == '1':
         test_basic_cleaning()
@@ -250,16 +325,39 @@ def main():
     elif choice == '3':
         test_with_synthetic_pii()
     elif choice == '4':
-        test_interactive_mode()
+        test_nordic_pii()
     elif choice == '5':
-        demonstrate_integration_with_analysis()
+        test_interactive_mode()
     elif choice == '6':
+        demonstrate_integration_with_analysis()
+    elif choice == '7':
         print("\n🏃 Running all non-interactive tests...\n")
         test_basic_cleaning()
         test_with_risky_features()
         test_with_synthetic_pii()
+        test_nordic_pii()
         demonstrate_integration_with_analysis()
         print("\n✅ All tests completed!")
+    elif choice == '8':
+        print("\n🏃 Running PII detection tests with report generation...\n")
+        test_with_synthetic_pii()
+        test_nordic_pii()
+        print("\n" + "="*70)
+        print("✅ PII TESTS COMPLETED!")
+        print("="*70)
+        print("\n📂 Generated files in output/:")
+        print("  General PII:")
+        print("    - general_pii_cleaned.csv")
+        print("    - general_pii_audit.json")
+        print("    - general_pii_simple_report.json")
+        print("    - general_pii_detailed_report.json")
+        print("\n  Nordic PII:")
+        print("    - nordic_pii_cleaned.csv")
+        print("    - nordic_pii_audit.json")
+        print("    - nordic_pii_simple_report.json")
+        print("    - nordic_pii_detailed_report.json")
+        print("\n💡 Review the simple reports for executive summaries")
+        print("💡 Review the detailed reports for compliance documentation")
     else:
         print("Invalid choice. Run: python test_cleaning.py")
 

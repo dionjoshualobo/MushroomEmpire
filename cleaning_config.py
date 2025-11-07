@@ -55,6 +55,13 @@ ENTITY_STRATEGY_MAP = {
     'SG_NRIC_FIN': 'REMOVE',
     'IN_PAN': 'REMOVE',
     
+    # Nordic National IDs - HIGH RISK (CRITICAL)
+    'FI_PERSONAL_ID': 'REMOVE',  # Finnish Henkilötunnus (HETU)
+    'SE_PERSONAL_ID': 'REMOVE',  # Swedish Personnummer
+    'NO_PERSONAL_ID': 'REMOVE',  # Norwegian Fødselsnummer
+    'DK_PERSONAL_ID': 'REMOVE',  # Danish CPR-nummer
+    'FI_KELA_ID': 'REMOVE',      # Finnish social security (Kela)
+    
     # Health Information - HIGH RISK (GDPR Art. 9)
     'MEDICAL_LICENSE': 'REMOVE',
     
@@ -66,6 +73,9 @@ ENTITY_STRATEGY_MAP = {
     # Personal Identifiers - MEDIUM RISK
     'PERSON': 'HASH',  # Names
     'IP_ADDRESS': 'HASH',
+    
+    # Nordic Business Identifiers - MEDIUM RISK
+    'FI_BUSINESS_ID': 'HASH',  # Finnish Y-tunnus (less sensitive than personal IDs)
     
     # Geographic Information - LOW RISK
     'LOCATION': 'MASK',
@@ -103,6 +113,14 @@ GDPR_COMPLIANCE = {
     'MEDICAL_LICENSE': 'Art. 9(1) - Special category data (health)',
     'NRP': 'Art. 9(1) - Special category data (political/religious views)',
     'DATE_TIME': 'Art. 4(1) - Personal data (temporal information)',
+    
+    # Nordic National IDs
+    'FI_PERSONAL_ID': 'Art. 4(1) - Personal data identifier + Recital 26',
+    'SE_PERSONAL_ID': 'Art. 4(1) - Personal data identifier + Recital 26',
+    'NO_PERSONAL_ID': 'Art. 4(1) - Personal data identifier + Recital 26',
+    'DK_PERSONAL_ID': 'Art. 4(1) - Personal data identifier + Recital 26',
+    'FI_KELA_ID': 'Art. 9(1) - Special category (health/social security)',
+    'FI_BUSINESS_ID': 'Art. 4(1) - Organizational identifier (lower risk)',
 }
 
 # Presidio Analyzer Settings
