@@ -1,6 +1,7 @@
 """
 Data Cleaning Module - PII Detection and Anonymization
 Handles GDPR-compliant data cleaning using Presidio for PII detection
+GPU-accelerated for faster processing of large datasets
 """
 
 import pandas as pd
@@ -20,6 +21,36 @@ try:
 except ImportError:
     PRESIDIO_AVAILABLE = False
     print("Warning: Presidio not installed. Run: pip install presidio-analyzer presidio-anonymizer")
+w    ad 
+# GPU detection
+try:
+    import torch
+    CUDA_AVAILABLE = torch.cuda.is_available()
+    if CUDA_AVAILABLE:
+        GPU_DEVICE = 0  # Use first GPU
+        GPU_NAME = torch.cuda.get_device_name(0)
+        GPU_MEMORY = torch.cuda.get_device_properties(0).total_memory / 1024**3  # GB
+    else:
+        GPU_DEVICE = -1
+        GPU_NAME = None
+        GPU_MEMORY = 0
+except ImportError:
+    CUDA_AVAILABLE = False
+    GPU_DEVICE = -1
+    GPU_NAME = None
+    GPU_MEMORY = 0
+
+try:
+    import spacy
+    SPACY_AVAILABLE = True
+    # Check if spaCy can use GPU
+    if CUDA_AVAILABLE:
+        spacy.require_gpu()
+except ImportError:
+    SPACY_AVAILABLE = False
+except Exception:
+    # GPU not available for spaCy, will fall back to CPU
+    pass
 
 
 class CleaningConfig:
@@ -97,18 +128,23 @@ class DataCleaner:
         ... )
     """
     
-    def __init__(self, df: pd.DataFrame, config: Optional[CleaningConfig] = None):
+    def __init__(self, df: pd.DataFrame, config: Optional[CleaningConfig] = None, use_gpu: bool = True):
         """
         Initialize the data cleaner
         
         Args:
             df: Input DataFrame to clean
             config: Optional custom configuration
+            use_gpu: Whether to use GPU acceleration if available (default: True)
         """
         self.df = df.copy()
         self.config = config or CleaningConfig()
         self.audit_log = []
         self.cleaning_actions = {}
+        self.use_gpu = use_gpu and CUDA_AVAILABLE
+        
+        # Display GPU info
+        self._display_gpu_info()
         
         # Initialize Presidio engines
         if PRESIDIO_AVAILABLE:
@@ -119,8 +155,29 @@ class DataCleaner:
                 "Install with: pip install presidio-analyzer presidio-anonymizer"
             )
     
+    def _display_gpu_info(self):
+        """Display GPU availability and configuration"""
+        print("\n" + "="*70)
+        print("🖥️  HARDWARE CONFIGURATION")
+        print("="*70)
+        
+        if CUDA_AVAILABLE and self.use_gpu:
+            print(f"✓ GPU ACCELERATION: ENABLED")
+            print(f"  Device: {GPU_NAME}")
+            print(f"  Memory: {GPU_MEMORY:.2f} GB")
+            print(f"  CUDA Device ID: {GPU_DEVICE}")
+        elif CUDA_AVAILABLE and not self.use_gpu:
+            print(f"⚠️  GPU ACCELERATION: DISABLED (use_gpu=False)")
+            print(f"  Available GPU: {GPU_NAME} ({GPU_MEMORY:.2f} GB)")
+        else:
+            print(f"⚠️  GPU ACCELERATION: NOT AVAILABLE")
+            print(f"  Reason: {'PyTorch not installed' if not 'torch' in dir() else 'No CUDA device detected'}")
+            print(f"  Install: pip install torch --index-url https://download.pytorch.org/whl/cu121")
+        
+        print("="*70 + "\n")
+    
     def _init_presidio(self):
-        """Initialize Presidio analyzer and anonymizer engines"""
+        """Initialize Presidio analyzer and anonymizer engines with GPU support"""
         # Create NLP engine configuration
         configuration = {
             "nlp_engine_name": "spacy",
@@ -132,11 +189,23 @@ class DataCleaner:
             provider = NlpEngineProvider(nlp_configuration=configuration)
             nlp_engine = provider.create_engine()
             
+            # Enable GPU for spaCy if available
+            if self.use_gpu and SPACY_AVAILABLE:
+                try:
+                    import spacy
+                    # Move spaCy model to GPU
+                    spacy.require_gpu()
+                    print("✓ spaCy GPU acceleration enabled")
+                except Exception as e:
+                    print(f"⚠️  Could not enable spaCy GPU: {e}")
+                    print("  Falling back to CPU for NLP processing")
+            
             # Create analyzer with NLP engine
             self.analyzer = AnalyzerEngine(nlp_engine=nlp_engine)
             self.anonymizer = AnonymizerEngine()
             
-            print("✓ Presidio engines initialized successfully")
+            device_info = "GPU" if self.use_gpu else "CPU"
+            print(f"✓ Presidio engines initialized successfully ({device_info} mode)")
         except Exception as e:
             # Fallback to default configuration if spaCy model not available
             print(f"Warning: Could not load spaCy model, using default configuration: {e}")
@@ -207,7 +276,7 @@ class DataCleaner:
         scan_all_cells: bool
     ) -> Dict[str, List[Dict]]:
         """
-        Detect PII at column and cell level
+        Detect PII at column and cell level (GPU-accelerated when available)
         
         Returns:
             Dictionary mapping column names to list of detected entities
@@ -226,7 +295,8 @@ class DataCleaner:
             text_columns = df.select_dtypes(include=['object']).columns.tolist()
             columns_to_scan = list(set(columns_to_scan + text_columns))
         
-        print(f"  Scanning {len(columns_to_scan)} columns: {columns_to_scan}")
+        device_info = f"GPU ({GPU_NAME})" if self.use_gpu else "CPU"
+        print(f"  Scanning {len(columns_to_scan)} columns using {device_info}: {columns_to_scan}")
         
         for column in columns_to_scan:
             print(f"  Analyzing '{column}'...", end=" ")
@@ -526,7 +596,13 @@ class DataCleaner:
                 'original_columns': len(self.df.columns),
                 'cleaned_rows': len(cleaned_df),
                 'cleaned_columns': len(cleaned_df.columns),
-                'presidio_version': 'enabled' if PRESIDIO_AVAILABLE else 'disabled'
+                'presidio_version': 'enabled' if PRESIDIO_AVAILABLE else 'disabled',
+                'gpu_acceleration': {
+                    'enabled': self.use_gpu,
+                    'cuda_available': CUDA_AVAILABLE,
+                    'device': GPU_NAME if self.use_gpu else 'CPU',
+                    'gpu_memory_gb': GPU_MEMORY if self.use_gpu else 0
+                }
             },
             'summary': {
                 'columns_removed': [],
@@ -706,19 +782,22 @@ def main():
     import sys
     
     if len(sys.argv) < 2:
-        print("Usage: python cleaning.py <data_file.csv>")
+        print("Usage: python cleaning.py <data_file.csv> [--no-gpu]")
         print("Example: python cleaning.py Datasets/loan_data.csv")
+        print("Options:")
+        print("  --no-gpu    Disable GPU acceleration (use CPU only)")
         sys.exit(1)
     
     data_path = sys.argv[1]
+    use_gpu = '--no-gpu' not in sys.argv
     
     # Load data
     print(f"Loading data from {data_path}...")
     df = pd.read_csv(data_path)
     print(f"Loaded {len(df)} rows × {len(df.columns)} columns")
     
-    # Initialize cleaner
-    cleaner = DataCleaner(df)
+    # Initialize cleaner with GPU support
+    cleaner = DataCleaner(df, use_gpu=use_gpu)
     
     # Run cleaning (interactive mode)
     cleaned_df, audit_report = cleaner.clean(
