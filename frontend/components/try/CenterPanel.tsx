@@ -715,28 +715,305 @@ export function CenterPanel({ tab, onAnalyze }: CenterPanelProps) {
 				);
 			case "risk-analysis":
 				return (
-					<div className="space-y-4">
-						<h2 className="text-xl font-semibold">Risk Analysis</h2>
+					<div className="space-y-6">
+						<h2 className="text-2xl font-bold text-slate-800">🔒 Risk Analysis</h2>
 						{analyzeResult ? (
-							<div className="space-y-4">
-								<div className="p-4 bg-white rounded-lg border">
-									<div className="text-sm text-slate-600">Overall Risk Score</div>
-									<div className="text-2xl font-bold">{(analyzeResult.risk_assessment.overall_risk_score * 100).toFixed(1)}%</div>
+							<div className="space-y-6">
+								{/* Overall Risk Score Card */}
+								<div className="relative overflow-hidden rounded-xl border-2 border-slate-200 bg-gradient-to-br from-slate-50 via-white to-slate-50 p-6 shadow-lg">
+									<div className="absolute top-0 right-0 w-32 h-32 bg-gradient-to-br from-red-500/5 to-orange-500/5 rounded-full blur-3xl"></div>
+									<div className="relative">
+										<div className="flex items-center justify-between mb-4">
+											<div>
+												<div className="text-sm font-medium text-slate-600 mb-1">Overall Risk Score</div>
+												<div className="text-5xl font-bold bg-gradient-to-r from-red-600 to-orange-600 bg-clip-text text-transparent">
+													{(analyzeResult.risk_assessment.overall_risk_score * 100).toFixed(1)}%
+												</div>
+											</div>
+											<div className={`px-4 py-2 rounded-full text-sm font-bold ${
+												analyzeResult.risk_assessment.risk_level === 'CRITICAL' ? 'bg-red-100 text-red-700' :
+												analyzeResult.risk_assessment.risk_level === 'HIGH' ? 'bg-orange-100 text-orange-700' :
+												analyzeResult.risk_assessment.risk_level === 'MEDIUM' ? 'bg-yellow-100 text-yellow-700' :
+												'bg-green-100 text-green-700'
+											}`}>
+												{analyzeResult.risk_assessment.risk_level} RISK
+											</div>
+										</div>
+										
+										{analyzeResult.risk_assessment.presidio_enabled && (
+											<div className="inline-flex items-center gap-2 px-3 py-1.5 bg-blue-50 border border-blue-200 rounded-lg text-xs font-medium text-blue-700">
+												<span className="w-2 h-2 bg-blue-500 rounded-full animate-pulse"></span>
+												Presidio-Enhanced Detection
+											</div>
+										)}
+									</div>
 								</div>
-								
-								{cleanResult && (
-									<div className="p-4 bg-white rounded-lg border">
-										<h3 className="font-semibold mb-2">PII Detection Results</h3>
-										<div className="text-sm space-y-1">
-											<div>Cells Anonymized: <span className="font-medium">{cleanResult.summary.total_cells_affected}</span></div>
-											<div>Columns Removed: <span className="font-medium">{cleanResult.summary.columns_removed.length}</span></div>
-											<div>Columns Anonymized: <span className="font-medium">{cleanResult.summary.columns_anonymized.length}</span></div>
+
+								{/* Risk Categories Grid */}
+								<div className="grid grid-cols-2 md:grid-cols-3 gap-4">
+									{Object.entries(analyzeResult.risk_assessment.risk_categories || {}).map(([category, score]: [string, any]) => {
+										const riskPct = (score * 100);
+										const riskLevel = riskPct >= 70 ? 'CRITICAL' : riskPct >= 50 ? 'HIGH' : riskPct >= 30 ? 'MEDIUM' : 'LOW';
+										const categoryIcons: Record<string, string> = {
+											privacy: '🔒',
+											ethical: '⚖️',
+											compliance: '📋',
+											security: '🛡️',
+											operational: '⚙️',
+											data_quality: '📊'
+										};
+										
+										return (
+											<div key={category} className={`relative overflow-hidden rounded-lg border-2 p-4 transition-all hover:shadow-md ${
+												riskLevel === 'CRITICAL' ? 'border-red-200 bg-gradient-to-br from-red-50 to-white' :
+												riskLevel === 'HIGH' ? 'border-orange-200 bg-gradient-to-br from-orange-50 to-white' :
+												riskLevel === 'MEDIUM' ? 'border-yellow-200 bg-gradient-to-br from-yellow-50 to-white' :
+												'border-green-200 bg-gradient-to-br from-green-50 to-white'
+											}`}>
+												<div className="flex items-start justify-between mb-2">
+													<div className="text-2xl">{categoryIcons[category] || '📌'}</div>
+													<span className={`text-xs font-bold px-2 py-1 rounded ${
+														riskLevel === 'CRITICAL' ? 'bg-red-100 text-red-700' :
+														riskLevel === 'HIGH' ? 'bg-orange-100 text-orange-700' :
+														riskLevel === 'MEDIUM' ? 'bg-yellow-100 text-yellow-700' :
+														'bg-green-100 text-green-700'
+													}`}>
+														{riskLevel}
+													</span>
+												</div>
+												<div className="text-sm font-semibold text-slate-700 capitalize mb-1">
+													{category.replace('_', ' ')}
+												</div>
+												<div className="text-2xl font-bold text-slate-800">
+													{riskPct.toFixed(0)}%
+												</div>
+												<div className="mt-2 h-1.5 bg-slate-200 rounded-full overflow-hidden">
+													<div 
+														className={`h-full rounded-full transition-all ${
+															riskLevel === 'CRITICAL' ? 'bg-gradient-to-r from-red-500 to-red-600' :
+															riskLevel === 'HIGH' ? 'bg-gradient-to-r from-orange-500 to-orange-600' :
+															riskLevel === 'MEDIUM' ? 'bg-gradient-to-r from-yellow-500 to-yellow-600' :
+															'bg-gradient-to-r from-green-500 to-green-600'
+														}`}
+														style={{ width: `${Math.min(riskPct, 100)}%` }}
+													></div>
+												</div>
+											</div>
+										);
+									})}
+								</div>
+
+								{/* Privacy Risks - PII Detection */}
+								{analyzeResult.risk_assessment.privacy_risks && (
+									<div className="bg-white rounded-xl border-2 border-slate-200 p-6 shadow-sm">
+										<div className="flex items-center gap-2 mb-4">
+											<span className="text-2xl">🔒</span>
+											<h3 className="text-lg font-bold text-slate-800">Privacy Risks</h3>
+											<span className="ml-auto px-3 py-1 bg-slate-100 text-slate-700 rounded-full text-xs font-semibold">
+												{analyzeResult.risk_assessment.privacy_risks.pii_count} PII Types Detected
+											</span>
+										</div>
+
+										{/* PII Detections */}
+										{analyzeResult.risk_assessment.privacy_risks.pii_detected && 
+										 analyzeResult.risk_assessment.privacy_risks.pii_detected.length > 0 ? (
+											<div className="space-y-3">
+												<div className="grid grid-cols-1 md:grid-cols-2 gap-3">
+													{analyzeResult.risk_assessment.privacy_risks.pii_detected.slice(0, 6).map((pii: any, idx: number) => (
+														<div key={idx} className={`p-3 rounded-lg border-2 ${
+															pii.severity === 'CRITICAL' ? 'bg-red-50 border-red-200' :
+															pii.severity === 'HIGH' ? 'bg-orange-50 border-orange-200' :
+															pii.severity === 'MEDIUM' ? 'bg-yellow-50 border-yellow-200' :
+															'bg-blue-50 border-blue-200'
+														}`}>
+															<div className="flex items-center justify-between mb-1">
+																<span className="text-xs font-bold text-slate-600">
+																	{pii.column}
+																</span>
+																<span className={`text-xs font-bold px-2 py-0.5 rounded ${
+																	pii.severity === 'CRITICAL' ? 'bg-red-100 text-red-700' :
+																	pii.severity === 'HIGH' ? 'bg-orange-100 text-orange-700' :
+																	pii.severity === 'MEDIUM' ? 'bg-yellow-100 text-yellow-700' :
+																	'bg-blue-100 text-blue-700'
+																}`}>
+																	{pii.severity}
+																</span>
+															</div>
+															<div className="text-sm font-semibold text-slate-800">
+																{pii.type}
+															</div>
+															<div className="text-xs text-slate-600 mt-1">
+																Detected via: {pii.detection_method}
+																{pii.confidence && ` (${(pii.confidence * 100).toFixed(0)}% confidence)`}
+															</div>
+														</div>
+													))}
+												</div>
+
+												{/* Privacy Metrics */}
+												<div className="grid grid-cols-2 md:grid-cols-4 gap-3 pt-3 border-t border-slate-200">
+													<div className="text-center p-3 bg-slate-50 rounded-lg">
+														<div className="text-xs text-slate-600 mb-1">Re-ID Risk</div>
+														<div className="text-lg font-bold text-slate-800">
+															{(analyzeResult.risk_assessment.privacy_risks.reidentification_risk * 100).toFixed(0)}%
+														</div>
+													</div>
+													<div className="text-center p-3 bg-slate-50 rounded-lg">
+														<div className="text-xs text-slate-600 mb-1">Data Minimization</div>
+														<div className="text-lg font-bold text-slate-800">
+															{(analyzeResult.risk_assessment.privacy_risks.data_minimization_score * 100).toFixed(0)}%
+														</div>
+													</div>
+													<div className="text-center p-3 bg-slate-50 rounded-lg">
+														<div className="text-xs text-slate-600 mb-1">Anonymization</div>
+														<div className="text-sm font-bold text-slate-800">
+															{analyzeResult.risk_assessment.privacy_risks.anonymization_level}
+														</div>
+													</div>
+													<div className="text-center p-3 bg-slate-50 rounded-lg">
+														<div className="text-xs text-slate-600 mb-1">Detection</div>
+														<div className="text-sm font-bold text-slate-800">
+															{analyzeResult.risk_assessment.privacy_risks.detection_method}
+														</div>
+													</div>
+												</div>
+											</div>
+										) : (
+											<div className="text-sm text-slate-600 bg-green-50 border border-green-200 rounded-lg p-3">
+												✓ No PII detected in the dataset
+											</div>
+										)}
+									</div>
+								)}
+
+								{/* Violations */}
+								{analyzeResult.risk_assessment.violations && 
+								 analyzeResult.risk_assessment.violations.length > 0 && (
+									<div className="bg-white rounded-xl border-2 border-slate-200 p-6 shadow-sm">
+										<div className="flex items-center gap-2 mb-4">
+											<span className="text-2xl">⚠️</span>
+											<h3 className="text-lg font-bold text-slate-800">Risk Violations</h3>
+											<span className="ml-auto px-3 py-1 bg-red-100 text-red-700 rounded-full text-xs font-semibold">
+												{analyzeResult.risk_assessment.violations.length} Issues
+											</span>
+										</div>
+
+										<div className="space-y-3">
+											{analyzeResult.risk_assessment.violations.map((violation: any, idx: number) => (
+												<div key={idx} className={`p-4 rounded-lg border-2 ${
+													violation.severity === 'CRITICAL' ? 'bg-red-50 border-red-200' :
+													violation.severity === 'HIGH' ? 'bg-orange-50 border-orange-200' :
+													violation.severity === 'MEDIUM' ? 'bg-yellow-50 border-yellow-200' :
+													'bg-blue-50 border-blue-200'
+												}`}>
+													<div className="flex items-start justify-between gap-3">
+														<div className="flex-1">
+															<div className="flex items-center gap-2 mb-1">
+																<span className={`text-xs font-bold px-2 py-1 rounded ${
+																	violation.severity === 'CRITICAL' ? 'bg-red-100 text-red-700' :
+																	violation.severity === 'HIGH' ? 'bg-orange-100 text-orange-700' :
+																	violation.severity === 'MEDIUM' ? 'bg-yellow-100 text-yellow-700' :
+																	'bg-blue-100 text-blue-700'
+																}`}>
+																	{violation.severity}
+																</span>
+																<span className="text-xs font-semibold text-slate-600 uppercase">
+																	{violation.category}
+																</span>
+															</div>
+															<div className="text-sm font-semibold text-slate-800 mb-1">
+																{violation.message}
+															</div>
+															{violation.details && (
+																<div className="text-xs text-slate-600">
+																	{violation.details}
+																</div>
+															)}
+														</div>
+													</div>
+												</div>
+											))}
+										</div>
+									</div>
+								)}
+
+								{/* Key Insights */}
+								{analyzeResult.risk_assessment.insights && 
+								 analyzeResult.risk_assessment.insights.length > 0 && (
+									<div className="bg-gradient-to-br from-blue-50 to-indigo-50 rounded-xl border-2 border-blue-200 p-6 shadow-sm">
+										<div className="flex items-center gap-2 mb-4">
+											<span className="text-2xl">💡</span>
+											<h3 className="text-lg font-bold text-slate-800">Key Insights</h3>
+										</div>
+
+										<div className="space-y-2">
+											{analyzeResult.risk_assessment.insights.map((insight: string, idx: number) => (
+												<div key={idx} className="flex items-start gap-2 text-sm text-slate-700">
+													<span className="text-blue-600 mt-0.5">•</span>
+													<span>{insight}</span>
+												</div>
+											))}
+										</div>
+									</div>
+								)}
+
+								{/* Compliance Status */}
+								{analyzeResult.risk_assessment.compliance_risks && (
+									<div className="bg-white rounded-xl border-2 border-slate-200 p-6 shadow-sm">
+										<div className="flex items-center gap-2 mb-4">
+											<span className="text-2xl">📋</span>
+											<h3 className="text-lg font-bold text-slate-800">Compliance Status</h3>
+										</div>
+
+										<div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+											{Object.entries(analyzeResult.risk_assessment.compliance_risks)
+												.filter(([key]) => ['gdpr', 'ccpa', 'hipaa', 'ecoa'].includes(key))
+												.map(([regulation, data]: [string, any]) => {
+													if (!data || typeof data !== 'object') return null;
+													
+													return (
+														<div key={regulation} className={`p-4 rounded-lg border-2 ${
+															data.status === 'COMPLIANT' ? 'bg-green-50 border-green-200' :
+															data.status === 'PARTIAL' ? 'bg-yellow-50 border-yellow-200' :
+															data.status === 'NOT_APPLICABLE' ? 'bg-slate-50 border-slate-200' :
+															'bg-red-50 border-red-200'
+														}`}>
+															<div className="flex items-center justify-between mb-2">
+																<span className="text-sm font-bold text-slate-800 uppercase">
+																	{regulation}
+																</span>
+																<span className={`text-xs font-bold px-2 py-1 rounded ${
+																	data.status === 'COMPLIANT' ? 'bg-green-100 text-green-700' :
+																	data.status === 'PARTIAL' ? 'bg-yellow-100 text-yellow-700' :
+																	data.status === 'NOT_APPLICABLE' ? 'bg-slate-100 text-slate-700' :
+																	'bg-red-100 text-red-700'
+																}`}>
+																	{data.status}
+																</span>
+															</div>
+															{data.score !== undefined && (
+																<div className="text-xs text-slate-600 mb-2">
+																	Compliance Score: {(data.score * 100).toFixed(0)}%
+																</div>
+															)}
+															{data.applicable === false && (
+																<div className="text-xs text-slate-600">
+																	Not applicable to this dataset
+																</div>
+															)}
+														</div>
+													);
+												})}
 										</div>
 									</div>
 								)}
 							</div>
 						) : (
-							<p className="text-sm text-slate-600">Upload and analyze a dataset to see risk assessment.</p>
+							<div className="text-center py-12 bg-slate-50 rounded-xl border-2 border-dashed border-slate-300">
+								<span className="text-4xl mb-3 block">🔒</span>
+								<p className="text-slate-600 mb-2">No risk analysis results yet</p>
+								<p className="text-sm text-slate-500">Upload a dataset and click "Analyze" to see comprehensive risk assessment</p>
+							</div>
 						)}
 					</div>
 				);
