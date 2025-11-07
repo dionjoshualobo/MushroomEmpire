@@ -86,14 +86,15 @@ class AIGovernanceAnalyzer:
         self.trainer.train()
         self.trainer.evaluate()
         
-        # Step 3: Analyze bias
+        # Step 3: Analyze bias (Presidio disabled by default to avoid initialization issues)
         self.bias_analyzer = BiasAnalyzer(
             self.processor.X_test,
             self.processor.y_test,
             self.trainer.y_pred,
             self.processor.df,
             self.processor.protected_attributes,
-            self.processor.target_column
+            self.processor.target_column,
+            use_presidio=False  # Set to True to enable Presidio-enhanced detection
         )
         bias_results = self.bias_analyzer.analyze()
         

@@ -97,6 +97,10 @@ async def analyze_dataset(file: UploadFile = File(...)):
         analyzer.save_report(report, full_report_path)
         
         # Prepare response with summary
+        bias_analysis = report.get("bias_analysis", {})
+        model_metrics = report.get("model_performance", {}).get("metrics", {})
+        risk_assessment = report.get("risk_assessment", {})
+        
         response_data = {
             "status": "success",
             "filename": file.filename,
@@ -106,28 +110,34 @@ async def analyze_dataset(file: UploadFile = File(...)):
                 "features": list(df.columns)
             },
             "model_performance": {
-                "accuracy": report.get("model_metrics", {}).get("accuracy", 0),
-                "precision": report.get("model_metrics", {}).get("precision", 0),
-                "recall": report.get("model_metrics", {}).get("recall", 0),
-                "f1_score": report.get("model_metrics", {}).get("f1_score", 0)
+                "accuracy": model_metrics.get("accuracy", 0),
+                "precision": model_metrics.get("precision", 0),
+                "recall": model_metrics.get("recall", 0),
+                "f1_score": model_metrics.get("f1_score", 0)
             },
             "bias_metrics": {
-                "overall_bias_score": report.get("bias_metrics", {}).get("overall_bias_score", 0),
-                "disparate_impact": report.get("bias_metrics", {}).get("disparate_impact", {}),
-                "statistical_parity": report.get("bias_metrics", {}).get("statistical_parity_difference", {}),
-                "violations_detected": report.get("bias_metrics", {}).get("fairness_violations", [])
+                "overall_bias_score": bias_analysis.get("overall_bias_score", 0),
+                "disparate_impact": bias_analysis.get("fairness_metrics", {}),
+                "statistical_parity": bias_analysis.get("fairness_metrics", {}),
+                "violations_detected": bias_analysis.get("fairness_violations", [])
             },
             "risk_assessment": {
-                "overall_risk_score": report.get("risk_metrics", {}).get("overall_risk_score", 0),
-                "privacy_risks": report.get("risk_metrics", {}).get("privacy_risks", []),
-                "ethical_risks": report.get("risk_metrics", {}).get("ethical_risks", []),
-                "compliance_risks": report.get("risk_metrics", {}).get("compliance_risks", []),
-                "data_quality_risks": report.get("risk_metrics", {}).get("data_quality_risks", [])
+                "overall_risk_score": risk_assessment.get("overall_risk_score", 0),
+                "privacy_risks": risk_assessment.get("privacy_risks", []),
+                "ethical_risks": risk_assessment.get("ethical_risks", []),
+                "compliance_risks": risk_assessment.get("risk_categories", {}).get("compliance_risks", []),
+                "data_quality_risks": risk_assessment.get("risk_categories", {}).get("data_quality_risks", [])
             },
             "recommendations": report.get("recommendations", []),
             "report_file": f"/{report_path}",
             "timestamp": datetime.now().isoformat()
         }
+        
+        # Debug: Print bias metrics being sent to frontend
+        print(f"\n📊 Sending bias metrics to frontend:")
+        print(f"  Overall Bias Score: {response_data['bias_metrics']['overall_bias_score']:.3f}")
+        print(f"  Violations: {len(response_data['bias_metrics']['violations_detected'])}")
+        print(f"  Fairness Metrics: {len(response_data['bias_metrics']['disparate_impact'])} attributes")
         
         # Convert all numpy/pandas types to native Python types
         response_data = convert_to_serializable(response_data)

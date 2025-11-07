@@ -455,261 +455,45 @@ export function CenterPanel({ tab, onAnalyze }: CenterPanelProps) {
 				);
 			case "bias-analysis":
 				return (
-					<div className="space-y-6">
-						<div>
-							<h2 className="text-2xl font-bold mb-2">Bias & Fairness Analysis</h2>
-							<p className="text-sm text-slate-600">Comprehensive evaluation of algorithmic fairness across demographic groups</p>
-						</div>
-						
+					<div className="space-y-4">
+						<h2 className="text-xl font-semibold">Bias Analysis</h2>
 						{analyzeResult ? (
-							<div className="space-y-6">
-								{/* Overall Bias Score Card */}
-								<div className="p-6 bg-gradient-to-br from-purple-50 to-indigo-50 rounded-xl border-2 border-purple-200">
-									<div className="flex items-start justify-between">
+							<div className="space-y-4">
+								<div className="grid grid-cols-2 gap-4">
+									<div className="p-4 bg-white rounded-lg border">
+										<div className="text-sm text-slate-600">Overall Bias Score</div>
+										<div className="text-2xl font-bold">{(analyzeResult.bias_metrics.overall_bias_score * 100).toFixed(1)}%</div>
+									</div>
+									<div className="p-4 bg-white rounded-lg border">
+										<div className="text-sm text-slate-600">Violations Detected</div>
+										<div className="text-2xl font-bold">{analyzeResult.bias_metrics.violations_detected.length}</div>
+									</div>
+								</div>
+								
+								<div className="p-4 bg-white rounded-lg border">
+									<h3 className="font-semibold mb-2">Model Performance</h3>
+									<div className="grid grid-cols-4 gap-2 text-sm">
 										<div>
-											<div className="text-sm font-medium text-purple-700 mb-1">Overall Bias Score</div>
-											<div className="text-5xl font-bold text-purple-900">
-												{(analyzeResult.bias_metrics.overall_bias_score * 100).toFixed(1)}%
-											</div>
-											<div className="mt-3 flex items-center gap-2">
-												{analyzeResult.bias_metrics.overall_bias_score < 0.3 ? (
-													<>
-														<span className="px-3 py-1 bg-green-100 text-green-800 text-xs font-semibold rounded-full">
-															✓ Low Bias
-														</span>
-														<span className="text-sm text-slate-600">Excellent fairness</span>
-													</>
-												) : analyzeResult.bias_metrics.overall_bias_score < 0.5 ? (
-													<>
-														<span className="px-3 py-1 bg-yellow-100 text-yellow-800 text-xs font-semibold rounded-full">
-															⚠ Moderate Bias
-														</span>
-														<span className="text-sm text-slate-600">Monitor recommended</span>
-													</>
-												) : (
-													<>
-														<span className="px-3 py-1 bg-red-100 text-red-800 text-xs font-semibold rounded-full">
-															✗ High Bias
-														</span>
-														<span className="text-sm text-slate-600">Action required</span>
-													</>
-												)}
-											</div>
+											<div className="text-slate-600">Accuracy</div>
+											<div className="font-medium">{(analyzeResult.model_performance.accuracy * 100).toFixed(1)}%</div>
 										</div>
-										<div className="text-right">
-											<div className="text-sm text-slate-600 mb-1">Violations</div>
-											<div className={`text-3xl font-bold ${analyzeResult.bias_metrics.violations_detected.length > 0 ? 'text-red-600' : 'text-green-600'}`}>
-												{analyzeResult.bias_metrics.violations_detected.length}
-											</div>
+										<div>
+											<div className="text-slate-600">Precision</div>
+											<div className="font-medium">{(analyzeResult.model_performance.precision * 100).toFixed(1)}%</div>
+										</div>
+										<div>
+											<div className="text-slate-600">Recall</div>
+											<div className="font-medium">{(analyzeResult.model_performance.recall * 100).toFixed(1)}%</div>
+										</div>
+										<div>
+											<div className="text-slate-600">F1 Score</div>
+											<div className="font-medium">{(analyzeResult.model_performance.f1_score * 100).toFixed(1)}%</div>
 										</div>
 									</div>
-									
-									{/* Interpretation */}
-									<div className="mt-4 p-4 bg-white/70 rounded-lg">
-										<div className="text-xs font-semibold text-purple-800 mb-1">INTERPRETATION</div>
-										<p className="text-sm text-slate-700">
-											{analyzeResult.bias_metrics.overall_bias_score < 0.3 
-												? "Your model demonstrates strong fairness across demographic groups. Continue monitoring to ensure consistent performance."
-												: analyzeResult.bias_metrics.overall_bias_score < 0.5
-												? "Moderate bias detected. Review fairness metrics below and consider implementing mitigation strategies to reduce disparities."
-												: "Significant bias detected. Immediate action required to address fairness concerns before deployment. Review all violation details below."}
-										</p>
-									</div>
-								</div>
-
-								{/* Model Performance Metrics */}
-								<div className="p-6 bg-white rounded-xl border border-slate-200 shadow-sm">
-									<h3 className="font-bold text-lg mb-4 flex items-center gap-2">
-										<span className="text-blue-600">📊</span>
-										Model Performance Metrics
-									</h3>
-									<div className="grid grid-cols-2 md:grid-cols-4 gap-4">
-										<div className="p-4 bg-blue-50 rounded-lg">
-											<div className="text-xs text-blue-700 font-semibold mb-1">ACCURACY</div>
-											<div className="text-2xl font-bold text-blue-900">{(analyzeResult.model_performance.accuracy * 100).toFixed(1)}%</div>
-											<div className="text-xs text-slate-600 mt-1">Overall correctness</div>
-										</div>
-										<div className="p-4 bg-green-50 rounded-lg">
-											<div className="text-xs text-green-700 font-semibold mb-1">PRECISION</div>
-											<div className="text-2xl font-bold text-green-900">{(analyzeResult.model_performance.precision * 100).toFixed(1)}%</div>
-											<div className="text-xs text-slate-600 mt-1">Positive prediction accuracy</div>
-										</div>
-										<div className="p-4 bg-purple-50 rounded-lg">
-											<div className="text-xs text-purple-700 font-semibold mb-1">RECALL</div>
-											<div className="text-2xl font-bold text-purple-900">{(analyzeResult.model_performance.recall * 100).toFixed(1)}%</div>
-											<div className="text-xs text-slate-600 mt-1">True positive detection rate</div>
-										</div>
-										<div className="p-4 bg-orange-50 rounded-lg">
-											<div className="text-xs text-orange-700 font-semibold mb-1">F1 SCORE</div>
-											<div className="text-2xl font-bold text-orange-900">{(analyzeResult.model_performance.f1_score * 100).toFixed(1)}%</div>
-											<div className="text-xs text-slate-600 mt-1">Balanced metric</div>
-										</div>
-									</div>
-								</div>
-
-								{/* Fairness Metrics */}
-								{Object.keys(analyzeResult.bias_metrics.disparate_impact).length > 0 && (
-									<div className="p-6 bg-white rounded-xl border border-slate-200 shadow-sm">
-										<h3 className="font-bold text-lg mb-4 flex items-center gap-2">
-											<span className="text-purple-600">⚖️</span>
-											Fairness Metrics by Protected Attribute
-										</h3>
-										
-										{Object.entries(analyzeResult.bias_metrics.disparate_impact).map(([attr, metrics]: [string, any]) => (
-											<div key={attr} className="mb-6 last:mb-0 p-4 bg-slate-50 rounded-lg">
-												<div className="font-semibold text-slate-800 mb-3 flex items-center gap-2">
-													<span className="px-2 py-1 bg-purple-100 text-purple-800 text-xs rounded">
-														{attr.toUpperCase()}
-													</span>
-												</div>
-												
-												{/* Disparate Impact */}
-												{metrics?.disparate_impact?.value !== undefined && (
-													<div className="mb-3 p-3 bg-white rounded border border-slate-200">
-														<div className="flex items-center justify-between mb-2">
-															<div>
-																<div className="text-xs font-semibold text-slate-600">DISPARATE IMPACT RATIO</div>
-																<div className="text-2xl font-bold text-slate-900">{metrics.disparate_impact.value.toFixed(3)}</div>
-															</div>
-															<div className={`px-3 py-1 rounded-full text-xs font-semibold ${
-																metrics.disparate_impact.fair ? 'bg-green-100 text-green-800' : 'bg-red-100 text-red-800'
-															}`}>
-																{metrics.disparate_impact.fair ? '✓ FAIR' : '✗ UNFAIR'}
-															</div>
-														</div>
-														<div className="text-xs text-slate-600 mb-2">{metrics.disparate_impact.interpretation || 'Ratio of positive rates between groups'}</div>
-														<div className="text-xs text-slate-500 bg-blue-50 p-2 rounded">
-															<strong>Fair Range:</strong> {metrics.disparate_impact.threshold || 0.8} - {(1/(metrics.disparate_impact.threshold || 0.8)).toFixed(2)} 
-															{metrics.disparate_impact.fair 
-																? " • This ratio indicates balanced treatment across groups." 
-																: " • Ratio outside fair range suggests one group receives significantly different outcomes."}
-														</div>
-													</div>
-												)}
-												
-												{/* Statistical Parity */}
-												{metrics?.statistical_parity_difference?.value !== undefined && (
-													<div className="mb-3 p-3 bg-white rounded border border-slate-200">
-														<div className="flex items-center justify-between mb-2">
-															<div>
-																<div className="text-xs font-semibold text-slate-600">STATISTICAL PARITY DIFFERENCE</div>
-																<div className="text-2xl font-bold text-slate-900">
-																	{metrics.statistical_parity_difference.value.toFixed(3)}
-																</div>
-															</div>
-															<div className={`px-3 py-1 rounded-full text-xs font-semibold ${
-																metrics.statistical_parity_difference.fair ? 'bg-green-100 text-green-800' : 'bg-red-100 text-red-800'
-															}`}>
-																{metrics.statistical_parity_difference.fair ? '✓ FAIR' : '✗ UNFAIR'}
-															</div>
-														</div>
-														<div className="text-xs text-slate-600 mb-2">{metrics.statistical_parity_difference.interpretation || 'Difference in positive rates'}</div>
-														<div className="text-xs text-slate-500 bg-blue-50 p-2 rounded">
-															<strong>Fair Threshold:</strong> ±{metrics.statistical_parity_difference.threshold || 0.1} 
-															{metrics.statistical_parity_difference.fair 
-																? " • Difference within acceptable range for equal treatment." 
-																: " • Significant difference in positive outcome rates between groups."}
-														</div>
-													</div>
-												)}
-												
-												{/* Group Metrics */}
-												{metrics.group_metrics && (
-													<div className="p-3 bg-white rounded border border-slate-200">
-														<div className="text-xs font-semibold text-slate-600 mb-2">GROUP PERFORMANCE</div>
-														<div className="grid grid-cols-1 md:grid-cols-2 gap-2">
-															{Object.entries(metrics.group_metrics).map(([group, groupMetrics]: [string, any]) => (
-																<div key={group} className="p-2 bg-slate-50 rounded">
-																	<div className="font-medium text-sm text-slate-800">{group}</div>
-																	<div className="text-xs text-slate-600 mt-1">
-																		<div>Positive Rate: <strong>{groupMetrics.positive_rate !== undefined ? (groupMetrics.positive_rate * 100).toFixed(1) : 'N/A'}%</strong></div>
-																		<div>Sample Size: <strong>{groupMetrics.sample_size ?? 'N/A'}</strong></div>
-																		{groupMetrics.tpr !== undefined && <div>True Positive Rate: <strong>{(groupMetrics.tpr * 100).toFixed(1)}%</strong></div>}
-																	</div>
-																</div>
-															))}
-														</div>
-													</div>
-												)}
-											</div>
-										))}
-									</div>
-								)}
-
-								{/* Violations */}
-								{analyzeResult.bias_metrics.violations_detected.length > 0 && (
-									<div className="p-6 bg-red-50 rounded-xl border-2 border-red-200">
-										<h3 className="font-bold text-lg mb-4 flex items-center gap-2 text-red-800">
-											<span>⚠️</span>
-											Fairness Violations Detected
-										</h3>
-										<div className="space-y-3">
-											{analyzeResult.bias_metrics.violations_detected.map((violation: any, i: number) => (
-												<div key={i} className="p-4 bg-white rounded-lg border border-red-200">
-													<div className="flex items-start gap-3">
-														<span className={`px-2 py-1 rounded text-xs font-bold ${
-															violation.severity === 'HIGH' ? 'bg-red-600 text-white' :
-															violation.severity === 'MEDIUM' ? 'bg-orange-500 text-white' :
-															'bg-yellow-500 text-white'
-														}`}>
-															{violation.severity}
-														</span>
-														<div className="flex-1">
-															<div className="font-semibold text-slate-900">{violation.attribute}: {violation.metric}</div>
-															<div className="text-sm text-slate-700 mt-1">{violation.message}</div>
-															{violation.details && (
-																<div className="text-xs text-slate-500 mt-2 p-2 bg-slate-50 rounded">
-																	{violation.details}
-																</div>
-															)}
-														</div>
-													</div>
-												</div>
-											))}
-										</div>
-									</div>
-								)}
-
-								{/* Key Insights */}
-								<div className="p-6 bg-gradient-to-br from-blue-50 to-cyan-50 rounded-xl border border-blue-200">
-									<h3 className="font-bold text-lg mb-3 flex items-center gap-2 text-blue-900">
-										<span>💡</span>
-										Key Insights
-									</h3>
-									<ul className="space-y-2 text-sm text-slate-700">
-										<li className="flex items-start gap-2">
-											<span className="text-blue-600 mt-0.5">•</span>
-											<span><strong>Bias Score {(analyzeResult.bias_metrics.overall_bias_score * 100).toFixed(1)}%</strong> indicates 
-											{analyzeResult.bias_metrics.overall_bias_score < 0.3 ? ' strong fairness with minimal disparities across groups.' 
-												: analyzeResult.bias_metrics.overall_bias_score < 0.5 ? ' moderate disparities that should be monitored and addressed.'
-												: ' significant unfairness requiring immediate remediation before deployment.'}</span>
-										</li>
-										<li className="flex items-start gap-2">
-											<span className="text-blue-600 mt-0.5">•</span>
-											<span><strong>Model achieves {(analyzeResult.model_performance.accuracy * 100).toFixed(1)}% accuracy</strong>, 
-											but fairness metrics reveal how performance varies across demographic groups.</span>
-										</li>
-										{analyzeResult.bias_metrics.violations_detected.length > 0 ? (
-											<li className="flex items-start gap-2">
-												<span className="text-red-600 mt-0.5">•</span>
-												<span className="text-red-700"><strong>{analyzeResult.bias_metrics.violations_detected.length} violation(s)</strong> detected. 
-												Review mitigation tab for recommended actions to improve fairness.</span>
-											</li>
-										) : (
-											<li className="flex items-start gap-2">
-												<span className="text-green-600 mt-0.5">•</span>
-												<span className="text-green-700"><strong>No violations detected.</strong> Model meets fairness thresholds across all protected attributes.</span>
-											</li>
-										)}
-									</ul>
 								</div>
 							</div>
 						) : (
-							<div className="text-center py-12">
-								<div className="text-6xl mb-4">📊</div>
-								<p className="text-slate-600 mb-2">No analysis results yet</p>
-								<p className="text-sm text-slate-500">Upload a dataset and click "Analyze" to see bias and fairness metrics</p>
-							</div>
+							<p className="text-sm text-slate-600">Upload and analyze a dataset to see bias metrics.</p>
 						)}
 					</div>
 				);
