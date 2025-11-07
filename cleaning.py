@@ -21,7 +21,6 @@ try:
 except ImportError:
     PRESIDIO_AVAILABLE = False
     print("Warning: Presidio not installed. Run: pip install presidio-analyzer presidio-anonymizer")
-w    ad 
 # GPU detection
 try:
     import torch
